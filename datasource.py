@@ -1,4 +1,5 @@
 import time
+import logging
 
 # Dictionary of all active users
 # TODO move that dictionary to some kind of database with "in memory" caching
@@ -31,6 +32,7 @@ def get_user(t_id):
 
 def save_user(user):
     active_users[user.t_id] = user
+    logging.debug("User $s updated: %s", user.t_id, active_users[user.t_id])
 
 
 class User:

@@ -3,9 +3,20 @@ import os
 import telebot
 import datasource
 import oai_proxy
+import logging
+
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 bot = telebot.TeleBot(BOT_TOKEN)
+
+
+def main():
+    logging.basicConfig(level=logging.DEBUG)
+    logging.info('Started')
+
+
+if __name__ == '__main__':
+    main()
 
 
 @bot.message_handler(commands=['help'])
@@ -69,6 +80,8 @@ def set_oai_token(message):
     user.set_oai_token(token)
     datasource.save_user(user)
 
+    logging.info("Token %s has sat for user %s", token, user.t_id)
+
     bot.send_message(chat_id=message.chat.id, disable_web_page_preview=True,
                      text="It looks like everything is ready to start 🫡 Just start chatting with ChatGPT 🤖")
 
@@ -99,15 +112,17 @@ def chat_gpt_message_bus(message):
         user = datasource.get_user(t_user.id)
 
         # if openai token is empty make request not possible
-        if not user.oai_token:
+        if user.oai_token:
+            user.new_message(message.text)
+
             replay = oai_proxy.chat_request(user.oai_token, user.model, user.get_context())
 
             user.new_message(replay)
             datasource.save_user(user)
 
-            bot.reply_to(message, replay)
-
-        if user.oai_token:
+            bot.send_message(chat_id=message.chat.id, disable_web_page_preview=True,
+                             text=replay)
+        else:
             send_welcome(message)
 
 
